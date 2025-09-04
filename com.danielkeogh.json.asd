@@ -5,7 +5,10 @@
   :author "Daniel Keogh"
   :license  "MIT"
   :serial t
-  :depends-on (#:com.inuoe.jzon #:cl-ppcre)
+  :depends-on (#:alexandria
+               #:cl-ppcre
+               #:com.inuoe.jzon
+               #:local-time)
   :components ((:file "dates")
                (:file "types")
                (:file "json")))

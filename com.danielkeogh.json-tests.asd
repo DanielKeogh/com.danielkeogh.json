@@ -7,5 +7,4 @@
   :depends-on (#:com.danielkeogh.json #:fiveam #:com.inuoe.jzon)
   :components ((:module "tests"
 		            :serial t
-		            :components ((:file "package")
-			                       (:file "main")))))
+		            :components ((:file "main")))))

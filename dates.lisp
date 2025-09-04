@@ -20,7 +20,7 @@
     (<= 1 day days-in-month)))
 
 (let ((date-time-scanner (ppcre:create-scanner
-"^(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\\.([0-9]+))?([Zz]|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))$")))
+                          "^(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\\.([0-9]+))?([Zz]|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))$")))
   (defun parse-rfc3339-date-time (date-time-string)
     "Parse an RFC 3339 date-time string into a universal time.
 Returns NIL if the string is invalid."
@@ -36,9 +36,9 @@ Returns NIL if the string is invalid."
                  (hour (parse-int-slot 3))
                  (minute (parse-int-slot 4))
                  (second (parse-int-slot 5))
-                 (frac (if (aref starts 6) (parse-int-slot 6) 0))
+                 (frac (* 1000000 (if (aref starts 6) (parse-int-slot 6) 0)))
                  (tz (when (aref starts 7)
-                            (subseq date-time-string (aref starts 7) (aref ends 7))))
+                       (subseq date-time-string (aref starts 7) (aref ends 7))))
                  (tz-sign (when (aref starts 8)
                             (subseq date-time-string (aref starts 8) (aref ends 8))))
                  (tz-hours (when (aref starts 9) (parse-int-slot 9)))
@@ -46,9 +46,9 @@ Returns NIL if the string is invalid."
                  (offset (if (string-equal "z" tz)
                              0
                              (let ((sign (if (string= "+" tz-sign) 1 -1)))
-                               (* sign (+ tz-hours (/ tz-minutes 60)))))))
+                               (* sign 60 (+ (* 60 tz-hours) tz-minutes))))))
             (when (days-in-month-valid-p year month day)
-              (values (encode-universal-time second minute hour day month year offset) frac))))))))
+              (local-time:encode-timestamp frac second minute hour day month year :offset offset))))))))
 
 (let ((date-scanner (ppcre:create-scanner
                      "^(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$")))
@@ -58,8 +58,8 @@ Returns NIL if the string is invalid."
         (ppcre:scan date-scanner date-string)
       (declare (ignore end))
       (when start
-        (let* ((y (parse-integer date-string :start (aref starts 0) :end (aref ends 0)))
-               (m (parse-integer date-string :start (aref starts 1) :end (aref ends 1)))
-               (d (parse-integer date-string :start (aref starts 2) :end (aref ends 2))))
-          (when (days-in-month-valid-p y m d)
-            (encode-universal-time 0 0 0 d m y)))))))
+        (let* ((year (parse-integer date-string :start (aref starts 0) :end (aref ends 0)))
+               (month (parse-integer date-string :start (aref starts 1) :end (aref ends 1)))
+               (day (parse-integer date-string :start (aref starts 2) :end (aref ends 2))))
+          (when (days-in-month-valid-p year month day)
+            (local-time:encode-timestamp 0 0 0 0 day month year)))))))
