@@ -252,3 +252,18 @@
     (is (equal "{\"foo\":\"bar\"}" (json:write-string schema (make-test-struct :field1 "bar"))))
     (is (equal  "{\"foo\":25}" (json:write-string schema (make-test-struct :field1 25))))
     (signals json:schema-mismatch-error (json:write-string schema ""))))
+
+
+(test schema-object-nesting
+  (let ((schema (json:define-schema `(:object
+                                      :properties
+                                      ((:key "foo"
+                                        :value (:object
+                                                :properties
+                                                ((:key "one" :value (:value))
+                                                 (:key "two" :value (:value))))))))))
+    ;; parse
+    (is (equalp #H("foo" #H("one" 1 "two" 2))
+                (json:parse-string schema "{\"foo\": { \"one\": 1, \"two\": 2 }}")))
+    ;; write
+    (is (equal "{\"foo\":{\"one\":1,\"two\":2}}" (json:write-string schema #H("foo" #H("one" 1 "two" 2)))))))

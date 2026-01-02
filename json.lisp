@@ -118,11 +118,9 @@
                for setter-fn = (if accessor
                                    (eval (alexandria:with-gensyms (obj val)
                                            `(lambda (,obj ,val) (setf (,accessor ,obj) ,val))))
-                                   (or setter
-                                       (lambda (obj val) (setf (gethash key obj) val))))
+                                   setter)
                for getter-fn = (or accessor
-                                   getter
-                                   (lambda (obj) (gethash key obj)))
+                                   getter)
                for def = (make-json-object-property :key key :value value :setter-fn setter-fn :getter-fn getter-fn)
                do (when (and accessor (or getter setter))
                     (error 'malformed-schema-error
@@ -198,7 +196,8 @@
                                     (setter (jop-setter-fn property)))
                                 (if setter
                                     (funcall setter object val)
-                                    (setf (gethash key object) val))))))))
+                                    (setf (gethash key object) val))))
+                            ))))
              object))
 
          (parse-array (schema)
@@ -248,7 +247,9 @@
                  (loop for property-def being the hash-values of (jod-properties schema)
                        for key = (jop-key property-def)
                        for getter = (jop-getter-fn property-def)
-                       for val = (handler-case (funcall getter obj)
+                       for val = (handler-case (if getter
+                                                   (funcall getter obj)
+                                                   (gethash key obj))
                                    (error (c)
                                      (error 'schema-mismatch-error
                                             :message (format nil "Property ~a on object ~a getter failed with error ~a"
